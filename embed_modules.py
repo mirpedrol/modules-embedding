@@ -12,6 +12,12 @@ import os
 import argparse
 from datetime import datetime, timezone
 
+import umap
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+import numpy as np
+
 def clone_modules_repo():
     """ Clone nf-core modules repo"""
     modules_repo = ModulesRepo(remote_url="https://github.com/nf-core/modules.git", branch="master")
@@ -96,11 +102,73 @@ def use_query_engine(index, query):
     response = query_engine.query(query)
     return response
 
+def extract_module_name(path):
+    path = Path(path)
+    if "modules" in path.parts:
+        try:
+            idx = path.parts.index("modules")
+            # Get the parts after "modules/nf-core/"
+            module_parts = path.parts[idx + 2:]
+            
+            if len(module_parts) >= 1:
+                tool = module_parts[0]
+                
+                # Check if there's a subtool (second level directory)
+                if len(module_parts) >= 2 and not module_parts[1].startswith('.'):
+                    # Check if the second part is not a file extension or special directory
+                    subtool = module_parts[1]
+                    # Skip if it's a common subdirectory like 'tests'
+                    if subtool not in ['tests', 'meta.yml', 'main.nf']:
+                        return f"{tool}_{subtool}"
+                
+                return tool
+        except IndexError:
+            return "unknown"
+    return "unknown"
+
+def get_embeddings_for_plotting_from_index(index):
+    """Get embeddings and metadata from stored index for plotting"""
+    # Get all nodes from the index
+    nodes = list(index.docstore.docs.values())
+    node_texts = [node.text for node in nodes]
+    node_embeddings = embed_model.get_text_embedding_batch(node_texts)
+    log.info(f"Loaded {len(nodes)} nodes from index.")
+
+    node_labels = [node.metadata.get("file_path", "unknown") for node in nodes]
+
+    reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, metric='cosine')
+    embeddings_2d = reducer.fit_transform(node_embeddings)
+
+    module_labels = [extract_module_name(p) for p in node_labels]
+
+    return node_labels, embeddings_2d, module_labels
+
+def static_plot(embeddings_2d, module_labels):
+    log.info("Plotting static...")
+    plt.figure(figsize=(12, 8))
+    sns.scatterplot(x=embeddings_2d[:, 0], y=embeddings_2d[:, 1], hue=module_labels, palette="tab10", s=10, alpha=0.7)
+    plt.title("UMAP Projection of nf-core Module Embeddings")
+    plt.legend(loc='upper right', bbox_to_anchor=(1.25, 1))
+    plt.tight_layout()
+    plt.savefig("./UMAP_projection_nfcore_module_embeddings.png")
+
+def interactive_plot(embeddings_2d, module_labels, node_labels):
+    log.info("Plotting interactive...")
+    fig = px.scatter(
+        x=embeddings_2d[:, 0],
+        y=embeddings_2d[:, 1],
+        color=module_labels,
+        hover_name=node_labels,
+        title="nf-core Module Embedding Clusters (UMAP)"
+    )
+    fig.write_html("./nfcore_module_embedding_clusters_UMAP.html")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Embed nf-core modules for vector search")
-    parser.add_argument("-q", "--query", help="The query to ask the embedding of nf-core modules", required=True)
+    parser.add_argument("-q", "--query", help="The query to ask the embedding of nf-core modules")
     parser.add_argument("-i", "--index", help="Index path", default="./nfcore_modules")
     parser.add_argument("-r", "--regenerate", action="store_true", help="Force regenerating the index")
+    parser.add_argument("-v", "--visualise", action="store_true", help="Visualise the embedding")
     args = parser.parse_args()
 
     log = logging.getLogger()
@@ -118,15 +186,22 @@ if __name__ == "__main__":
 
     modules_repo = clone_modules_repo()
 
-    if args.regenerate and check_index_uptodate(modules_repo, args.index):
-        log.info("Generating index from the nf-core/modules repo")
-        nodes = get_nodes_from_files(modules_repo)
-        index = generate_index(nodes, args.index)
-    else:
-        index = upload_index(args.index)
-    
-    response = use_query_engine(index, args.query)
-    print(response)
+    if args.query or args.visualise:
+        if args.regenerate and check_index_uptodate(modules_repo, args.index):
+            log.info("Generating index from the nf-core/modules repo")
+            nodes = get_nodes_from_files(modules_repo)
+            index = generate_index(nodes, args.index)
+        else:
+            index = upload_index(args.index)
+        
+    if args.query:
+        response = use_query_engine(index, args.query)
+        print(f"\nResponse:\n{response}\n")
 
+    if args.visualise:
+        log.info("Visualisation of nf-core/modules embedding")
+        
+        node_labels, embeddings_2d, module_labels = get_embeddings_for_plotting_from_index(index)
 
-
+        static_plot(embeddings_2d, module_labels)
+        interactive_plot(embeddings_2d, module_labels, node_labels)
