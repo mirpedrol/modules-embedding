@@ -1,1 +1,5 @@
 nfcore_modules/
+nfcore_modules_all/
+nfcore_modules_main/
+nfcore_modules_meta/
+nfcore_modules_test/

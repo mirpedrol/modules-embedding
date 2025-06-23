@@ -18,13 +18,13 @@ import seaborn as sns
 import plotly.express as px
 import numpy as np
 
-def clone_modules_repo():
+def clone_modules_repo() -> ModulesRepo:
     """ Clone nf-core modules repo"""
     modules_repo = ModulesRepo(remote_url="https://github.com/nf-core/modules.git", branch="master")
     log.info("Cloned modules repo")
     return modules_repo
 
-def check_index_uptodate(modules_repo, index_path="./nfcore_modules"):
+def check_index_uptodate(modules_repo: ModulesRepo, index_path: str) -> bool:
     """
     Check if the index is up to date by comparing the date of the last commit in the nf-core/modules repo
     and the date of creation of the index.
@@ -49,18 +49,17 @@ def check_index_uptodate(modules_repo, index_path="./nfcore_modules"):
             log.debug(f"Using existing index (repo not updated and no force regenerate): {index_path}")
             return False
 
-def get_nodes_from_files(modules_repo):
+def get_nodes_from_files(modules_repo: ModulesRepo, name_filter: list[str], suffix_filter: list[str]) -> list:
     # Find all files with required extensions
     input_files = []
     for file_path in Path(modules_repo.modules_dir).rglob("*"):
-        if file_path.is_file() and file_path.suffix in [".nf", ".yml", ".test"]:
+        if file_path.is_file() and (file_path.name in name_filter or file_path.suffix in suffix_filter):
             input_files.append(str(file_path))
     log.info(f"Selected {len(input_files)} files")
 
     # Load modules into Document objects
     reader = SimpleDirectoryReader(
             input_files=input_files,
-            required_exts=[".nf", ".yml", ".test"]
         )
     documents = reader.load_data()
     log.info(f"Loaded {len(documents)} documents")
@@ -72,7 +71,7 @@ def get_nodes_from_files(modules_repo):
 
     return nodes
 
-def generate_index(nodes, index_path="./nfcore_modules"):
+def generate_index(nodes: list, index_path: str) -> VectorStoreIndex:
     # Store the documents
     index = VectorStoreIndex(nodes, embed_model=embed_model)
     log.info("Created index")
@@ -82,7 +81,7 @@ def generate_index(nodes, index_path="./nfcore_modules"):
 
     return index
 
-def upload_index(index_path="./nfcore_modules"):
+def upload_index(index_path: str) -> VectorStoreIndex:
         log.info("Using stored index")
         if not Path(index_path).exists():
             log.error(f"Index path '{index_path}' doesn't exist, regenerate it with --regenerate or provide the right path with --index")
@@ -92,7 +91,7 @@ def upload_index(index_path="./nfcore_modules"):
         log.info("Index loaded")
         return index
 
-def use_query_engine(index, query):
+def use_query_engine(index: VectorStoreIndex, query: str) -> str:
     """Use an index as a query engine (other options: as_retriever, as_chat_engine)"""
     llm = Ollama(model="mistral", request_timeout=120.0)
     query_engine = index.as_query_engine(
@@ -102,31 +101,21 @@ def use_query_engine(index, query):
     response = query_engine.query(query)
     return response
 
-def extract_module_name(path):
+def extract_module_name(path: str, base_dir: str) -> str:
     path = Path(path)
-    if "modules" in path.parts:
-        try:
-            idx = path.parts.index("modules")
-            # Get the parts after "modules/nf-core/"
-            module_parts = path.parts[idx + 2:]
-            
-            if len(module_parts) >= 1:
-                tool = module_parts[0]
-                
-                # Check if there's a subtool (second level directory)
-                if len(module_parts) >= 2 and not module_parts[1].startswith('.'):
-                    # Check if the second part is not a file extension or special directory
-                    subtool = module_parts[1]
-                    # Skip if it's a common subdirectory like 'tests'
-                    if subtool not in ['tests', 'meta.yml', 'main.nf']:
-                        return f"{tool}_{subtool}"
-                
-                return tool
-        except IndexError:
-            return "unknown"
+    base_dir = Path(base_dir)
+    rel_path = path.relative_to(base_dir)
+    module_parts = rel_path.parts
+    if len(module_parts) >= 1:
+        tool = module_parts[0]
+        if len(module_parts) > 2:
+            subtool = module_parts[1]
+            if subtool not in ['tests', 'meta.yml', 'main.nf']:
+                return f"{tool}_{subtool}"
+        return tool
     return "unknown"
 
-def get_embeddings_for_plotting_from_index(index):
+def get_embeddings_for_plotting_from_index(index, base_dir: str):
     """Get embeddings and metadata from stored index for plotting"""
     # Get all nodes from the index
     nodes = list(index.docstore.docs.values())
@@ -139,36 +128,37 @@ def get_embeddings_for_plotting_from_index(index):
     reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, metric='cosine')
     embeddings_2d = reducer.fit_transform(node_embeddings)
 
-    module_labels = [extract_module_name(p) for p in node_labels]
+    module_labels = [extract_module_name(p, base_dir) for p in node_labels]
 
     return node_labels, embeddings_2d, module_labels
 
-def static_plot(embeddings_2d, module_labels):
+def static_plot(embeddings_2d, module_labels, filter):
     log.info("Plotting static...")
     plt.figure(figsize=(12, 8))
     sns.scatterplot(x=embeddings_2d[:, 0], y=embeddings_2d[:, 1], hue=module_labels, palette="tab10", s=10, alpha=0.7)
-    plt.title("UMAP Projection of nf-core Module Embeddings")
+    plt.title(f"UMAP Projection of nf-core Module Embeddings (Using {filter} files)")
     plt.legend(loc='upper right', bbox_to_anchor=(1.25, 1))
     plt.tight_layout()
-    plt.savefig("./UMAP_projection_nfcore_module_embeddings.png")
+    plt.savefig(f"./UMAP_projection_nfcore_module_embeddings_{filter}.png")
 
-def interactive_plot(embeddings_2d, module_labels, node_labels):
+def interactive_plot(embeddings_2d, module_labels, node_labels, filter):
     log.info("Plotting interactive...")
     fig = px.scatter(
         x=embeddings_2d[:, 0],
         y=embeddings_2d[:, 1],
         color=module_labels,
         hover_name=node_labels,
-        title="nf-core Module Embedding Clusters (UMAP)"
+        title=f"nf-core Module Embedding Clusters (UMAP - Using {filter} files)"
     )
-    fig.write_html("./nfcore_module_embedding_clusters_UMAP.html")
+    fig.write_html(f"./nfcore_module_embedding_clusters_UMAP_{filter}.html")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Embed nf-core modules for vector search")
     parser.add_argument("-q", "--query", help="The query to ask the embedding of nf-core modules")
-    parser.add_argument("-i", "--index", help="Index path", default="./nfcore_modules")
+    parser.add_argument("-i", "--index", help="Define a custom index path")
     parser.add_argument("-r", "--regenerate", action="store_true", help="Force regenerating the index")
     parser.add_argument("-v", "--visualise", action="store_true", help="Visualise the embedding")
+    parser.add_argument("-f", "--filter", help="Which filter to apply when selecting nf-core module files. Possible values: all, main (for main.nf), meta (for meta.yml), test (for *.nf.test)", choices=["all", "main", "meta", "test"], default="all")
     args = parser.parse_args()
 
     log = logging.getLogger()
@@ -186,13 +176,29 @@ if __name__ == "__main__":
 
     modules_repo = clone_modules_repo()
 
+    # Set files to use & index path
+    name_filter = []
+    suffix_filter = []
+
+    if args.filter == "all":
+        name_filter = ["main.nf", "meta.yml"]
+        suffix_filter = [".test"]
+    elif args.filter == "main":
+        name_filter = ["main.nf"]
+    elif args.filter == "meta":
+        name_filter = ["meta.yml"]
+    elif args.filter == "test":
+        suffix_filter = [".test"]
+    
+    index_path = args.index if args.index else f"./nfcore_modules_{args.filter}"
+
     if args.query or args.visualise:
-        if args.regenerate and check_index_uptodate(modules_repo, args.index):
+        if args.regenerate and check_index_uptodate(modules_repo, index_path):
             log.info("Generating index from the nf-core/modules repo")
-            nodes = get_nodes_from_files(modules_repo)
-            index = generate_index(nodes, args.index)
+            nodes = get_nodes_from_files(modules_repo, name_filter, suffix_filter)
+            index = generate_index(nodes, index_path)
         else:
-            index = upload_index(args.index)
+            index = upload_index(index_path)
         
     if args.query:
         response = use_query_engine(index, args.query)
@@ -201,7 +207,7 @@ if __name__ == "__main__":
     if args.visualise:
         log.info("Visualisation of nf-core/modules embedding")
         
-        node_labels, embeddings_2d, module_labels = get_embeddings_for_plotting_from_index(index)
+        node_labels, embeddings_2d, module_labels = get_embeddings_for_plotting_from_index(index, modules_repo.modules_dir)
 
-        static_plot(embeddings_2d, module_labels)
-        interactive_plot(embeddings_2d, module_labels, node_labels)
+        static_plot(embeddings_2d, module_labels, args.filter)
+        interactive_plot(embeddings_2d, module_labels, node_labels, args.filter)
