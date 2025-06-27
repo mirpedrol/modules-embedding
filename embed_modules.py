@@ -12,16 +12,18 @@ import os
 import argparse
 from datetime import datetime, timezone
 
-import umap
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 import numpy as np
+import pandas as pd
+import hdbscan
+from umap.umap_ import UMAP
 
 def clone_modules_repo() -> ModulesRepo:
     """ Clone nf-core modules repo"""
     modules_repo = ModulesRepo(remote_url="https://github.com/nf-core/modules.git", branch="master")
-    log.info("Cloned modules repo")
+    #log.info("Cloned modules repo")
     return modules_repo
 
 def check_index_uptodate(modules_repo: ModulesRepo, index_path: str) -> bool:
@@ -125,7 +127,7 @@ def get_embeddings_for_plotting_from_index(index, base_dir: str):
 
     node_labels = [node.metadata.get("file_path", "unknown") for node in nodes]
 
-    reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, metric='cosine')
+    reducer = UMAP(n_neighbors=15, min_dist=0.1, metric='cosine')
     embeddings_2d = reducer.fit_transform(node_embeddings)
 
     module_labels = [extract_module_name(p, base_dir) for p in node_labels]
@@ -151,6 +153,32 @@ def interactive_plot(embeddings_2d, module_labels, node_labels, filter):
         title=f"nf-core Module Embedding Clusters (UMAP - Using {filter} files)"
     )
     fig.write_html(f"./nfcore_module_embedding_clusters_UMAP_{filter}.html")
+
+def plot_umap_hdbscan(module_names: list, embeddings: list, filter: str):
+    """Cluster the module embeddings and plot in a UMAP. 
+    Also write the modules classified to each cluster to a file."""
+
+    hdb = hdbscan.HDBSCAN(min_samples=2, min_cluster_size=15, metric='euclidean').fit(embeddings)
+
+    df_umap = (
+        pd.DataFrame(embeddings, columns=['x', 'y'])
+        .assign(cluster=lambda df: hdb.labels_.astype(str))
+        .sort_values(by='cluster')
+    )
+    df_umap['module_name'] = module_names
+    fig = px.scatter(
+        df_umap, x='x', y='y', color='cluster', hover_name='module_name',
+        opacity=df_umap['cluster'].apply(lambda c: 0.4 if c == '-1' else 1.0)
+    )
+    fig.write_html(f"./nfcore_module_embedding_clusters_UMAP_{filter}_llamaindex.html")
+
+    clusters = df_umap.groupby('cluster')['module_name'].apply(list)
+    with open(f"clusters_modules_{filter}_llamaindex.txt", 'w') as f:
+        for cluster_label, modules in clusters.items():
+            f.write(f"Cluster {cluster_label}:\n")
+            for module in modules:
+                f.write(f"  {module}\n")
+            f.write("\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Embed nf-core modules for vector search")
@@ -209,5 +237,6 @@ if __name__ == "__main__":
         
         node_labels, embeddings_2d, module_labels = get_embeddings_for_plotting_from_index(index, modules_repo.modules_dir)
 
-        static_plot(embeddings_2d, module_labels, args.filter)
-        interactive_plot(embeddings_2d, module_labels, node_labels, args.filter)
+        #static_plot(embeddings_2d, module_labels, args.filter)
+        #interactive_plot(embeddings_2d, module_labels, node_labels, args.filter)
+        plot_umap_hdbscan(module_labels, embeddings_2d, args.filter)
