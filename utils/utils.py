@@ -45,8 +45,8 @@ def reduce_dimensions(embeddings: list, n_neighbors: int, metric: str):
     embeddings_2d = reducer.fit_transform(np.array(embeddings))
     return embeddings_2d
 
-def clustering(embeddings_2d, module_names):
-    hdb = hdbscan.HDBSCAN(min_samples=2, min_cluster_size=15, metric='euclidean').fit(embeddings_2d)
+def clustering(embeddings_2d, module_names, min_samples=2, min_cluster_size=15, metric='euclidean'):
+    hdb = hdbscan.HDBSCAN(min_samples=min_samples, min_cluster_size=min_cluster_size, metric=metric).fit(embeddings_2d)
     df_umap = (
         pd.DataFrame(embeddings_2d, columns=['x', 'y'])
         .assign(cluster=lambda df: hdb.labels_.astype(str))
@@ -55,7 +55,7 @@ def clustering(embeddings_2d, module_names):
     df_umap['module_name'] = module_names
     return df_umap
 
-def plotting(df_umap, filter, results_dir, framework, n_neighbors, metric):
+def plotting(df_umap, filter, results_dir, n_neighbors, umap_metric, cluster_metric, min_samples, min_cluster_size):
     """
     Plot the embeddings by clusters UMAP and save the modules by cluster in a text file.
     """
@@ -65,11 +65,11 @@ def plotting(df_umap, filter, results_dir, framework, n_neighbors, metric):
         title=f"nf-core Module Embedding UMAP (Using {filter} files)",
         opacity=df_umap['cluster'].apply(lambda c: 0.4 if c == '-1' else 1.0)
     )
-    fig.write_html(f"{results_dir}/nfcore_module_embedding_UMAP_{filter}_{framework}_{n_neighbors}_{metric}.html")
+    fig.write_html(f"{results_dir}/nfcore_module_embedding_UMAP_{filter}-files_numN{n_neighbors}_metric-{umap_metric}-{cluster_metric}_minS{min_samples}_minC{min_cluster_size}.html")
 
     # Save clusters
     clusters = df_umap.groupby('cluster')['module_name'].apply(list)
-    with open(f"{results_dir}/modules_by_cluster_{filter}_{framework}_{n_neighbors}_{metric}.txt", 'w') as f:
+    with open(f"{results_dir}/modules_by_cluster_{filter}-files_numN{n_neighbors}_metric-{umap_metric}-{cluster_metric}_minS{min_samples}_minC{min_cluster_size}.txt", 'w') as f:
         for cluster_label, modules in clusters.items():
             f.write(f"Cluster {cluster_label}:\n")
             for module in modules:

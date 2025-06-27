@@ -1,6 +1,6 @@
 # modules-embedding
 
-A unified framework for embedding and visualizing nf-core modules using LlamaIndex or LangChain.
+Embedding and visualizing nf-core modules using LangChain.
 
 ## Project Structure
 
@@ -10,11 +10,9 @@ modules_embedding/
 ├── main.py
 ├── utils/
 │   ├── __init__.py
-│   ├── llamaindex_utils.py
 │   ├── langchain_utils.py
 |   └── utils.py
 ├── __indexes__/
-│   ├── llamaindex/
 │   └── langchain/
 ├── __Results__/
 ├── requirements.txt
@@ -30,31 +28,25 @@ modules_embedding/
 
 ## Usage
 
-Run the main script and select the framework and options:
+Run the main script and select the options:
 
-### LlamaIndex Example
+### Example
 ```bash
-python main.py --framework llamaindex --query "What does the samtools/index module do?" --filter main --visualise
-```
-
-### LangChain Example
-```bash
-python main.py --framework langchain --query "What does the samtools/index module do?" --filter meta --visualise
+python main.py --query "What does the samtools/index module do?" --filter meta --visualise --min_samples 2 --min_cluster_size 15 --umap_metric euclidean --cluster_metric euclidean
 ```
 
 ### Options
-- `--framework`: `llamaindex` or `langchain` (required)
-- `--query`: Query string to search the module embeddings
-- `--visualise`: Visualize the embeddings and clusters
-- `--regenerate`: Force re-embedding and index regeneration
-- `--filter`: Which files to use: `all`, `main`, `meta`, `test` (default: `all`)
-- `--index`: Custom path for the index (optional)
+- `--query`: Query to run against the index
+- `--visualise`: Visualize the embedding
+- `--regenerate`: Force regenerating the index
+- `--filter`: Which filter to apply when selecting module files: `all`, `main`, `meta`, `test` (default: `all`)
+- `--index`: Custom index path (optional)
+- `--n_neighbors`: Number of neighbors for UMAP dimensionality reduction (default: 15)
+- `--umap_metric`: Metric for UMAP dimensionality reduction (default: 'euclidean')
+- `--min_samples`: Minimum samples for HDBSCAN clustering (default: 2)
+- `--min_cluster_size`: Minimum cluster size for HDBSCAN clustering (default: 15)
+- `--cluster_metric`: Metric for HDBSCAN clustering (default: 'euclidean')
 
 ## Outputs
-- Indexes are stored in `__indexes__/<framework>/`
+- Indexes are stored in `__indexes__/`
 - Results (plots, cluster files) are stored in `__Results__/`
-
-## Notes
-- All reusable logic is in `utils/`.
-- No code duplication between frameworks.
-- Old scripts have been removed for clarity.
