@@ -34,12 +34,12 @@ Run the main script and select the framework and options:
 
 ### LlamaIndex Example
 ```bash
-python main.py --framework llamaindex --query "What does this module do?" --filter main --visualise
+python main.py --framework llamaindex --query "What does the samtools/index module do?" --filter main --visualise
 ```
 
 ### LangChain Example
 ```bash
-python main.py --framework langchain --query "What does this module do?" --filter meta --visualise
+python main.py --framework langchain --query "What does the samtools/index module do?" --filter meta --visualise
 ```
 
 ### Options

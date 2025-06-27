@@ -1,9 +1,19 @@
 from pathlib import Path
-import matplotlib.pyplot as plt
-import seaborn as sns
 import plotly.express as px
 import pandas as pd
 import hdbscan
+import logging
+from nf_core.modules.modules_repo import ModulesRepo
+from umap.umap_ import UMAP
+import numpy as np
+
+log = logging.getLogger(__name__)
+
+def clone_modules_repo():
+    """Clone nf-core modules repo with logging."""
+    modules_repo = ModulesRepo(remote_url="https://github.com/nf-core/modules.git", branch="master")
+    log.info("Cloned nf-core modules repository successfully.")
+    return modules_repo 
 
 def extract_module_name(path, base_dir):
     path = Path(path)
@@ -19,7 +29,7 @@ def extract_module_name(path, base_dir):
         return tool
     return "unknown"
 
-def load_module_files(modules_repo, name_filter, suffix_filter, log):
+def load_module_files(modules_repo, name_filter, suffix_filter):
     texts = []
     file_paths = []
     for file_path in Path(modules_repo.modules_dir).rglob("*"):
@@ -30,27 +40,12 @@ def load_module_files(modules_repo, name_filter, suffix_filter, log):
     log.info(f"Loaded {len(texts)} files")
     return texts, file_paths
 
-def static_plot(embeddings_2d, module_labels, filter, log, results_dir="__Results__"):
-    log.info("Plotting static...")
-    plt.figure(figsize=(12, 8))
-    sns.scatterplot(x=embeddings_2d[:, 0], y=embeddings_2d[:, 1], hue=module_labels, palette="tab10", s=10, alpha=0.7)
-    plt.title(f"UMAP Projection of nf-core Module Embeddings (Using {filter} files)")
-    plt.legend(loc='upper right', bbox_to_anchor=(1.25, 1))
-    plt.tight_layout()
-    plt.savefig(f"{results_dir}/UMAP_projection_nfcore_module_embeddings_{filter}.png")
+def reduce_dimensions(embeddings: list, n_neighbors: int, metric: str):
+    reducer = UMAP(n_components=2, random_state=42, n_neighbors=n_neighbors, min_dist=0.1, metric=metric)
+    embeddings_2d = reducer.fit_transform(np.array(embeddings))
+    return embeddings_2d
 
-def interactive_plot(embeddings_2d, module_labels, node_labels, filter, log, results_dir="__Results__"):
-    log.info("Plotting interactive...")
-    fig = px.scatter(
-        x=embeddings_2d[:, 0],
-        y=embeddings_2d[:, 1],
-        color=module_labels,
-        hover_name=node_labels,
-        title=f"nf-core Module Embedding Clusters (UMAP - Using {filter} files)"
-    )
-    fig.write_html(f"{results_dir}/nfcore_module_embedding_clusters_UMAP_{filter}.html")
-
-def plot_umap_hdbscan(module_names, embeddings_2d, filter, log, results_dir, framework_tag=""):
+def clustering(embeddings_2d, module_names):
     hdb = hdbscan.HDBSCAN(min_samples=2, min_cluster_size=15, metric='euclidean').fit(embeddings_2d)
     df_umap = (
         pd.DataFrame(embeddings_2d, columns=['x', 'y'])
@@ -58,23 +53,25 @@ def plot_umap_hdbscan(module_names, embeddings_2d, filter, log, results_dir, fra
         .sort_values(by='cluster')
     )
     df_umap['module_name'] = module_names
+    return df_umap
+
+def plotting(df_umap, filter, results_dir, framework, n_neighbors, metric):
+    """
+    Plot the embeddings by clusters UMAP and save the modules by cluster in a text file.
+    """
+    # Plot
     fig = px.scatter(
         df_umap, x='x', y='y', color='cluster', hover_name='module_name',
+        title=f"nf-core Module Embedding UMAP (Using {filter} files)",
         opacity=df_umap['cluster'].apply(lambda c: 0.4 if c == '-1' else 1.0)
     )
-    tag = f"_{framework_tag}" if framework_tag else ""
-    fig.write_html(f"{results_dir}/nfcore_module_embedding_clusters_UMAP_{filter}{tag}.html")
+    fig.write_html(f"{results_dir}/nfcore_module_embedding_UMAP_{filter}_{framework}_{n_neighbors}_{metric}.html")
+
+    # Save clusters
     clusters = df_umap.groupby('cluster')['module_name'].apply(list)
-    with open(f"{results_dir}/clusters_modules_{filter}{tag}.txt", 'w') as f:
+    with open(f"{results_dir}/modules_by_cluster_{filter}_{framework}_{n_neighbors}_{metric}.txt", 'w') as f:
         for cluster_label, modules in clusters.items():
             f.write(f"Cluster {cluster_label}:\n")
             for module in modules:
                 f.write(f"  {module}\n")
             f.write("\n")
-
-def clone_modules_repo(modules_repo_class, log):
-    """Clone nf-core modules repo with logging."""
-    log.info("Cloning nf-core modules repository from https://github.com/nf-core/modules.git (branch: master)")
-    modules_repo = modules_repo_class(remote_url="https://github.com/nf-core/modules.git", branch="master")
-    log.info("Cloned nf-core modules repository successfully.")
-    return modules_repo 
