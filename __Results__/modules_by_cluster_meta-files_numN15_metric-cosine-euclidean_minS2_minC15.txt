@@ -165,6 +165,7 @@ Cluster -1:
   kmcp_profile
   kmcp_compute
   kmcp_index
+  dssp_mkdssp
   ampcombi
   viennarna_rnalfold
   viennarna_rnafold
@@ -192,6 +193,8 @@ Cluster -1:
   amulety_translate
   amulety_antiberta2
   amulety_esm2
+
+Cluster 0:
   amulety_antiberty
   ampcombi2_cluster
   ampcombi2_complete
@@ -217,6 +220,8 @@ Cluster -1:
   pyrodigal
   platypus
   yak_count
+
+Cluster 1:
   happy_happy
   happy_sompy
   happy_prepy
@@ -238,8 +243,6 @@ Cluster -1:
   ragtag_patch
   ragtag_scaffold
   ffq
-
-Cluster 0:
   mcroni
   gtdbtk_gtdbtoncbimajorityvote
   gtdbtk_classifywf
@@ -290,8 +293,6 @@ Cluster 0:
   gt_suffixerator
   gt_ltrharvest
   gt_gff3
-
-Cluster 1:
   gffcompare
   getorganelle_config
   getorganelle_fromreads
@@ -313,8 +314,6 @@ Cluster 1:
   spatyper
   regtools_junctionsextract
   bamtofastq10x
-
-Cluster 10:
   plink_epistasis
   plink_hwe
   plink_bcf
@@ -333,8 +332,6 @@ Cluster 10:
   vclust_prefilter
   vclust_align
   clair3
-
-Cluster 11:
   bamcmp
   metamaps_classify
   metamaps_mapdirectly
@@ -363,8 +360,6 @@ Cluster 11:
   sniffles
   fcs_fcsadaptor
   fcs_fcsgx
-
-Cluster 12:
   emmtyper
   mosdepth
   argnorm
@@ -383,6 +378,8 @@ Cluster 12:
   barrnap
   hisat2_align
   hisat2_build
+
+Cluster 10:
   hisat2_extractsplicesites
   ncbitools_vecscreen
   smoove_call
@@ -423,8 +420,6 @@ Cluster 12:
   cellranger_vdj
   mlst
   hiphase
-
-Cluster 13:
   fq_lint
   fq_generate
   fq_subsample
@@ -438,11 +433,11 @@ Cluster 13:
   malt_build
   malt_run
   taxonkit_name2taxid
+
+Cluster 11:
   taxonkit_lineage
   abritamr_run
   splitubam
-
-Cluster 14:
   vcftools
   homer_annotatepeaks
   homer_findpeaks
@@ -467,8 +462,6 @@ Cluster 14:
   deseq2_differential
   msisensor_msi
   msisensor_scan
-
-Cluster 15:
   deeptools_plotprofile
   deeptools_alignmentsieve
   deeptools_computematrix
@@ -508,8 +501,6 @@ Cluster 15:
   bcftools_view
   bcftools_pluginscatter
   bcftools_index
-
-Cluster 16:
   bcftools_filter
   bcftools_query
   bcftools_stats
@@ -520,6 +511,8 @@ Cluster 16:
   faqcs
   ultraplex
   deepbgc_pipeline
+
+Cluster 12:
   deepbgc_download
   crabs_insilicopcr
   crabs_import
@@ -540,6 +533,8 @@ Cluster 16:
   foldmason_easymsa
   thermorawfileparser
   mobsuite_recon
+
+Cluster 13:
   tailfindr
   proteinortho
   crabz_compress
@@ -560,6 +555,8 @@ Cluster 16:
   propr_propr
   propr_propd
   propr_grea
+
+Cluster 14:
   raw2ometiff
   spotiflow
   manta_tumoronly
@@ -571,8 +568,6 @@ Cluster 16:
   galah
   nacho_normalize
   nacho_qc
-
-Cluster 17:
   xeniumranger_import-segmentation
   xeniumranger_relabel
   xeniumranger_resegment
@@ -604,8 +599,6 @@ Cluster 17:
   bismark_coverage2cytosine
   bismark_summary
   velocyto
-
-Cluster 18:
   xengsort_index
   bakta_bakta
   bakta_baktadbdownload
@@ -622,10 +615,10 @@ Cluster 18:
   prinseqplusplus
   dastool_dastool
   dastool_scaffolds2bin
-
-Cluster 19:
   dastool_fastatocontig2bin
   yara_mapper
+
+Cluster 15:
   yara_index
   strdust
   trimgalore
@@ -644,6 +637,8 @@ Cluster 19:
   fgbio_zipperbams
   pbmm2_align
   resfinder_run
+
+Cluster 16:
   pypgx_computecontrolstatistics
   pypgx_createinputvcf
   pypgx_preparedepthofcoverage
@@ -653,8 +648,6 @@ Cluster 19:
   gem2_gem2bedmappability
   gem2_gemindexer
   president
-
-Cluster 2:
   admixture
   shasum
   sylph_profile
@@ -664,6 +657,8 @@ Cluster 2:
   popscle_demuxlet
   checkqc
   cadd
+
+Cluster 17:
   tiara_tiara
   hifiasm
   genomad_endtoend
@@ -703,6 +698,8 @@ Cluster 2:
   repeatmodeler_repeatmodeler
   repeatmodeler_builddatabase
   hicap
+
+Cluster 18:
   cnvkit_access
   cnvkit_target
   cnvkit_genemetrics
@@ -732,8 +729,6 @@ Cluster 2:
   interproscan
   cobs_classicconstruct
   cobs_compactconstruct
-
-Cluster 20:
   mcquant
   miniprot_align
   miniprot_index
@@ -750,8 +745,6 @@ Cluster 20:
   integronfinder
   abricate_run
   abricate_summary
-
-Cluster 21:
   leehom
   hamronization_summarize
   hamronization_abricate
@@ -769,8 +762,6 @@ Cluster 21:
   plink2_remove
   plink2_indeppairwise
   plink2_vcf2bgen
-
-Cluster 22:
   plink2_score
   plink2_vcf
   plink2_het
@@ -827,8 +818,6 @@ Cluster 22:
   ngscheckmate_vafncm
   ngscheckmate_patterngenerator
   ngscheckmate_fastq
-
-Cluster 23:
   megahit
   maltextract
   snpeff_snpeff
@@ -842,6 +831,7 @@ Cluster 23:
   ngsbits_bedannotategc
   ngsbits_bedcoverage
   sourcepredict
+  tinc
   strelka_germline
   strelka_somatic
   dupradar
@@ -873,9 +863,9 @@ Cluster 23:
   purgedups_purgedups
   purgedups_calcuts
   starfusion_build
-
-Cluster 24:
   pbtk_bam2fastq
+
+Cluster 19:
   pbtk_pbindex
   phispy
   decoupler_decoupler
@@ -895,6 +885,8 @@ Cluster 24:
   hmmer_hmmsearch
   genotyphi_parse
   mgikit_demultiplex
+
+Cluster 2:
   gstama_merge
   gstama_collapse
   gstama_polyacleanup
@@ -905,11 +897,14 @@ Cluster 24:
   kaiju_kaiju2krona
   idr
   upp_align
+  fusionreport_download
   sexdeterrmine
   sparsesignatures
   tidk_plot
   tidk_explore
   tidk_search
+
+Cluster 20:
   staphopiasccmec
   scramble_clusteridentifier
   scramble_clusteranalysis
@@ -936,6 +931,8 @@ Cluster 24:
   cooler_digest
   cooler_balance
   cooler_zoomify
+
+Cluster 21:
   telseq
   multivcfanalyzer
   eggnogmapper
@@ -958,10 +955,10 @@ Cluster 24:
   sourmash_index
   sourmash_sketch
   seqwish_induce
-
-Cluster 25:
   sortmerna
   stitch
+
+Cluster 22:
   liftoff
   pilon
   fastqscreen_buildfromindex
@@ -979,8 +976,6 @@ Cluster 25:
   bedtools_intersect
   bedtools_sort
   bedtools_subtract
-
-Cluster 26:
   bedtools_merge
   bedtools_slop
   bedtools_unionbedg
@@ -1000,8 +995,6 @@ Cluster 26:
   ska_fasta
   eklipse
   famsa_guidetree
-
-Cluster 27:
   famsa_align
   salsa2
   goleft_indexsplit
@@ -1033,8 +1026,6 @@ Cluster 27:
   odgi_stats
   simpleaf_quant
   simpleaf_index
-
-Cluster 28:
   ribotricer_prepareorfs
   ribotricer_detectorfs
   hhsuite_hhblits
@@ -1055,8 +1046,6 @@ Cluster 28:
   mirdeep2_mirdeep2
   deacon_index
   catpack_prepare
-
-Cluster 29:
   catpack_bins
   catpack_addnames
   catpack_summarise
@@ -1077,6 +1066,8 @@ Cluster 29:
   vrhyme_extractunbinned
   vrhyme_vrhyme
   oncocnv
+
+Cluster 23:
   dragonflye
   openmsthirdparty_cometadapter
   semibin_singleeasybin
@@ -1098,6 +1089,8 @@ Cluster 29:
   qcat
   sequali
   quast
+
+Cluster 24:
   agrvate
   eido_validate
   eido_convert
@@ -1121,11 +1114,11 @@ Cluster 29:
   porechop_abi
   porechop_porechop
   clippy
-
-Cluster 3:
   mapdamage2
   minimac4_impute
   minimac4_compressref
+
+Cluster 25:
   blast_makeblastdb
   blast_blastp
   blast_updateblastdb
@@ -1148,8 +1141,6 @@ Cluster 3:
   ganon_classify
   ganon_table
   ganon_report
-
-Cluster 30:
   circularmapper_circulargenerator
   circularmapper_realignsamfile
   samblaster
@@ -1181,8 +1172,6 @@ Cluster 30:
   skani_search
   skani_sketch
   peddy
-
-Cluster 31:
   orthofinder
   cobrameta
   hostile_clean
@@ -1254,8 +1243,6 @@ Cluster 31:
   samtools_sort
   samtools_collate
   samtools_merge
-
-Cluster 4:
   samtools_sormadup
   samtools_mpileup
   samtools_bedcov
@@ -1271,8 +1258,6 @@ Cluster 4:
   samtools_cramsize
   samtools_collatefastq
   samtools_flagstat
-
-Cluster 5:
   samtools_import
   samtools_fastq
   samtools_dict
@@ -1288,9 +1273,9 @@ Cluster 5:
   adapterremoval
   seqfu_derep
   seqfu_stats
-  chromograph
 
-Cluster 6:
+Cluster 26:
+  chromograph
   sentieon_collectvcmetrics
   sentieon_gvcftyper
   sentieon_tnscope
@@ -1307,6 +1292,8 @@ Cluster 6:
   sentieon_datametrics
   sentieon_dnascope
   sentieon_wgsmetrics
+
+Cluster 3:
   sentieon_haplotyper
   sentieon_dedup
   rapidnj
@@ -1336,6 +1323,7 @@ Cluster 6:
   checkv_updatedatabase
   checkv_downloaddatabase
   checkv_endtoend
+  vizgenpostprocessing_runsegmentationontile
   vizgenpostprocessing_preparesegmentation
   clipkit
   glnexus
@@ -1388,6 +1376,8 @@ Cluster 6:
   gatk4spark_markduplicates
   vuegen
   wisecondorx_gender
+
+Cluster 4:
   wisecondorx_predict
   wisecondorx_newref
   wisecondorx_convert
@@ -1451,6 +1441,8 @@ Cluster 6:
   gatk4_calculatecontamination
   gatk4_denoisereadcounts
   gatk4_determinegermlinecontigploidy
+
+Cluster 5:
   gatk4_reblockgvcf
   gatk4_collectreadcounts
   gatk4_svannotate
@@ -1517,6 +1509,8 @@ Cluster 6:
   muscle
   isoseq_cluster
   isoseq_refine
+
+Cluster 6:
   racon
   tcoffee_consensus
   tcoffee_tcs
@@ -1524,8 +1518,6 @@ Cluster 6:
   tcoffee_alncompare
   tcoffee_regressive
   tcoffee_align
-
-Cluster 7:
   tcoffee_irmsd
   tcoffee_seqreformat
   fastqutils_info
@@ -1548,6 +1540,8 @@ Cluster 7:
   seqkit_grep
   seqkit_head
   seqkit_fq2fa
+
+Cluster 7:
   seqkit_fx2tab
   seqkit_tab2fx
   seqkit_replace
@@ -1568,13 +1562,13 @@ Cluster 7:
   krakenuniq_build
   macs3_callpeak
   dedup
-
-Cluster 8:
   spring_compress
   spring_decompress
   glimpse_phase
   glimpse_ligate
   glimpse_chunk
+
+Cluster 8:
   glimpse_sample
   glimpse_concordance
   umicollapse
@@ -1586,12 +1580,12 @@ Cluster 8:
   prodigal
   fargene
   salmon_quant
-
-Cluster 9:
   salmon_index
   calder2
   cowpy
   iphop_predict
+
+Cluster 9:
   iphop_download
   gfaffix
   fcsgx_fetchdb

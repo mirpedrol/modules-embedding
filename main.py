@@ -2,9 +2,8 @@ import argparse
 import logging
 from pathlib import Path
 from langchain_ollama import OllamaEmbeddings
-import nltk
 
-from utils.langchain_utils import preprocess_text, embed_texts, store_embeddings_chroma, get_embeddings_chroma, query_combined_files
+from utils.langchain_utils import embed_texts, store_embeddings_chroma, get_embeddings_chroma, query_combined_files, rag
 from utils.utils import clone_modules_repo, clustering, plotting, reduce_dimensions, load_module_files, extract_module_name
 
 def main():
@@ -57,13 +56,14 @@ def main():
 
     if args.regenerate or not Path(index_path).exists():
         # Download stopwords if not already done
-        nltk.download('punkt')
-        nltk.download('stopwords')
+        #nltk.download('punkt')
+        #nltk.download('stopwords')
         loaded_texts, file_paths = load_module_files(modules_repo, name_filter, suffix_filter)
-        processed_texts = [preprocess_text(text) for text in loaded_texts]
-        log.info(f"Preprocessed {len(processed_texts)} texts.")
-        embeddings = embed_texts(processed_texts, embedding_model)
-        collection = store_embeddings_chroma(processed_texts, embeddings, file_paths, index_path)
+        #processed_texts = [preprocess_text(text) for text in loaded_texts]
+        
+        log.info(f"Loaded {len(loaded_texts)} texts.")
+        embeddings = embed_texts(loaded_texts, embedding_model)
+        collection = store_embeddings_chroma(loaded_texts, embeddings, file_paths, index_path)
     else:
         collection = get_embeddings_chroma(index_path)
         data = collection.get(include=['metadatas', 'embeddings'], limit=1000000) # No limit
@@ -71,9 +71,11 @@ def main():
         embeddings = data['embeddings']
 
     if args.query:
-        results = query_combined_files(args.query, collection)
-        for result in results['documents'][0]:
-            print(result)
+        retrieved = query_combined_files(args.query, collection, embedding_model)
+        log.info(f"Retrieved {len(retrieved['documents'][0])} documents.")
+        for document in retrieved['documents'][0]:
+            print(f"Document: {document}\n\n")
+        print(rag(args.query, retrieved))
 
     if args.visualise:
         log.info("Visualisation of nf-core/modules embedding (langchain)")

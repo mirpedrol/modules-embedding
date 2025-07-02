@@ -6,8 +6,12 @@ import logging
 from nf_core.modules.modules_repo import ModulesRepo
 from umap.umap_ import UMAP
 import numpy as np
+import requests
+import json
 
 log = logging.getLogger(__name__)
+
+SCHEMA_URL = "https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json"
 
 def clone_modules_repo():
     """Clone nf-core modules repo with logging."""
@@ -75,3 +79,81 @@ def plotting(df_umap, filter, results_dir, n_neighbors, umap_metric, cluster_met
             for module in modules:
                 f.write(f"  {module}\n")
             f.write("\n")
+
+def download_schema(schema_url):
+    """Download the JSON schema from the given URL and save it to the specified path."""
+    response = requests.get(schema_url)
+    response.raise_for_status()
+    with open("__schema__/meta-schema.json", "w") as f:
+        f.write(response.text)
+
+
+def summarize_schema():
+    """Summarize the JSON schema for prompt inclusion. Returns a string summary of the schema's structure and descriptions."""
+    with open("__schema__/meta-schema.json", "r") as f:
+        schema = json.load(f)
+    definitions = schema.get('definitions', {})
+
+    def summarize_properties(properties, level=0, parent_key=None):
+        lines = []
+        indent = '  ' * level
+        for prop, details in properties.items():
+            desc = details.get('description', '')
+            typ = details.get('type', '')
+            lines.append(f"{indent}- {prop} ({typ}): {desc}")
+            # Special handling for input, output, tools
+            if prop == 'input':
+                input_items = details.get('items', {})
+                if input_items.get('type') == 'array' and 'items' in input_items and '$ref' in input_items['items']:
+                    ref = input_items['items']['$ref']
+                    ref_name = ref.split('/')[-1]
+                    if ref_name in definitions:
+                        lines.append(f"{indent}  (input channel element properties):")
+                        lines.extend(summarize_element_properties(definitions[ref_name], level+2, channel=True))
+            elif prop == 'output':
+                output_items = details.get('items', {})
+                if output_items.get('type') == 'object' and 'patternProperties' in output_items:
+                    for pat, pat_schema in output_items['patternProperties'].items():
+                        pat_label = '<channel element name>' if pat == '.*' else pat
+                        lines.append(f"{indent}  (output channel '{pat_label}' properties):")
+                        if pat_schema.get('type') == 'array' and 'items' in pat_schema and '$ref' in pat_schema['items']:
+                            ref = pat_schema['items']['$ref']
+                            ref_name = ref.split('/')[-1]
+                            if ref_name in definitions:
+                                lines.append(f"{indent}    (output channel element properties):")
+                                lines.extend(summarize_element_properties(definitions[ref_name], level+3, channel=True))
+            elif prop == 'tools':
+                tools_items = details.get('items', {})
+                if tools_items.get('type') == 'object' and 'patternProperties' in tools_items:
+                    for pat, pat_schema in tools_items['patternProperties'].items():
+                        pat_label = '<tool name>' if pat == '.*' else pat
+                        lines.append(f"{indent}  (tool '{pat_label}' properties):")
+                        if pat_schema.get('type') == 'object' and 'properties' in pat_schema:
+                            lines.extend(summarize_properties(pat_schema['properties'], level+2))
+            elif typ == 'object' and 'properties' in details:
+                lines.extend(summarize_properties(details['properties'], level+1))
+            elif typ == 'array' and 'items' in details:
+                item = details['items']
+                if 'properties' in item:
+                    lines.append(f"{indent}  (array items:)")
+                    lines.extend(summarize_properties(item['properties'], level+2))
+        return lines
+
+    def summarize_element_properties(element_schema, level=0, channel=False):
+        lines = []
+        indent = '  ' * level
+        if 'patternProperties' in element_schema:
+            for pat, pat_schema in element_schema['patternProperties'].items():
+                pat_label = '<channel element name>' if channel and pat == '.*' else pat
+                lines.append(f"{indent}- {pat_label} (object):")
+                if 'properties' in pat_schema:
+                    for k, v in pat_schema['properties'].items():
+                        desc = v.get('description', '')
+                        typ = v.get('type', '')
+                        lines.append(f"{indent}  - {k} ({typ}): {desc}")
+        return lines
+
+    properties = schema.get('properties', {})
+    summary_lines = [f"Schema title: {schema.get('title', '')}", f"Description: {schema.get('description', '')}"]
+    summary_lines += summarize_properties(properties)
+    return '\n'.join(summary_lines)
